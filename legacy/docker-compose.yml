@@ -1,0 +1,50 @@
+# legacy/docker-compose.yml
+# Старый (legacy) стек: Mattermost v9.5 + MySQL 8.0
+services:
+  mattermost:
+    image: mattermost/mattermost-team-edition:9.5
+    container_name: mattermost
+    ports:
+      - "8065:8065"
+    environment:
+      - MM_SQLSETTINGS_DRIVERNAME=mysql # Исправлено с ошибочного squirrel из PDF
+      - MM_SQLSETTINGS_DATASOURCE=root:${DB_MYSQL_ROOT_PASSWORD}@tcp(mattermost-mysql:3306)/mattermost?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s
+      - MM_SQLSETTINGS_DATASOURCESSLMODE=disabled
+      - MM_SERVICESETTINGS_SITEURL=http://localhost:8065
+      - MM_TEAMSSETTINGS_ENABLEOPENSERVER=false
+    volumes:
+      - mattermost_data:/mattermost/data
+      - mattermost_logs:/mattermost/logs
+    networks:
+      - mattermost_network
+    depends_on:
+      - mattermost-mysql
+    restart: unless-stopped
+
+  mattermost-mysql:
+    image: mysql:8.0
+    container_name: mattermost-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=mattermost
+      - MYSQL_USER=mmuser
+      - MYSQL_PASSWORD=${DB_MMUSER_PASSWORD}
+      - TZ=UTC
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - mattermost_network
+    restart: unless-stopped
+
+networks:
+  mattermost_network:
+    name: mattermost_network # Фиксированное имя для переиспользования
+    driver: bridge
+
+volumes:
+  mattermost_data:
+    name: mattermost_data # Фиксированное имя тома
+  mattermost_logs:
+    name: mattermost_logs
+  mysql_data:
