@@ -15,6 +15,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 0. Создаём .env файл из secrets
+      - name: Create .env file
+        run: |
+          echo "DB_MYSQL_ROOT_PASSWORD=${{ secrets.DB_MYSQL_ROOT_PASSWORD }}" > .env
+          echo "DB_MMUSER_PASSWORD=${{ secrets.DB_MMUSER_PASSWORD }}" >> .env
+          echo "DB_POSTGRES_PASSWORD=${{ secrets.DB_POSTGRES_PASSWORD }}" >> .env
+
       # 1. Проверка идемпотентности
       - name: Check Migration Status
         id: check_status
