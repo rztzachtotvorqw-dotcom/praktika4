@@ -54,7 +54,7 @@ jobs:
         shell: powershell
         run: |
           Write-Host "🔄 Migrating schema and data from MySQL to PostgreSQL..."
-          docker run --rm --platform linux/amd64 --network=mattermost_network mattermost/mattermost-pgloader:latest pgloader `
+          docker run --rm --network=mattermost_network dimitri/pgloader:latest pgloader `
             --with "include drop" `
             mysql://root:${{ secrets.DB_MYSQL_ROOT_PASSWORD }}@mattermost-mysql/mattermost `
             postgresql://postgres:${{ secrets.DB_POSTGRES_PASSWORD }}@mattermost-postgres/mattermost
