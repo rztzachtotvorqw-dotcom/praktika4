@@ -1,8 +1,9 @@
 # legacy/docker-compose.yml
-# Legacy стек: Mattermost v9.5 + MySQL 8.0
+# Старый стек: Mattermost v9.5 + MySQL 8.0
 services:
   mattermost:
     image: mattermost/mattermost-team-edition:9.5
+    platform: linux/amd64
     container_name: mattermost
     ports:
       - "8065:8065"
