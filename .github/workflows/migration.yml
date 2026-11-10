@@ -49,7 +49,7 @@ jobs:
           echo "⏳ Waiting for PostgreSQL to initialize..."
           sleep 10
 
-      # 4. Миграция данных через pgloader (образ dimitri/pgloader поддерживает ARM64 нативно)
+      # 4. Миграция данных через pgloader
       - name: Run pgloader (With Schema Drop for Idempotency)
         if: steps.check_status.outputs.already_migrated == 'false'
         run: |
@@ -63,6 +63,17 @@ jobs:
       - name: Mark Migration as Completed
         if: steps.check_status.outputs.already_migrated == 'false'
         run: touch "$HOME/.mattermost_migration_completed"
+
+      # 5.5. Остановка legacy-стека
+      - name: Stop Legacy Stack
+        run: |
+          echo "🛑 Stopping legacy Mattermost stack..."
+          if [ -f "legacy/docker-compose.yml" ]; then
+            docker compose -f legacy/docker-compose.yml down
+            echo "✅ Legacy stack stopped."
+          else
+            echo "⚠ Legacy compose file not found, skipping."
+          fi
 
       # 6. Развертывание обновлённого стека
       - name: Deploy Upgraded Stack
