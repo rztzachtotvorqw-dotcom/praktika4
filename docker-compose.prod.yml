@@ -1,5 +1,5 @@
 # docker-compose.prod.yml
-# Целевой стек: Mattermost v12.0.1 + PostgreSQL 15
+# Production стек: Mattermost v12.0.1 + PostgreSQL 15
 services:
   mattermost:
     image: mattermost/mattermost-team-edition:12.0.1
@@ -12,7 +12,7 @@ services:
       - MM_SERVICESETTINGS_SITEURL=http://localhost:8065
       - MM_TEAMSSETTINGS_ENABLEOPENSERVER=false
     volumes:
-      - mattermost_data:/mattermost/data # Переиспользует тот же том!
+      - mattermost_data:/mattermost/data
       - mattermost_logs:/mattermost/logs
     networks:
       - mattermost_network
@@ -37,13 +37,14 @@ services:
 networks:
   mattermost_network:
     name: mattermost_network
-    external: true # Используем сеть, созданную legacy-стеком
+    external: true
 
 volumes:
   mattermost_data:
     name: mattermost_data
-    external: true # Используем существующий том с данными
+    external: true
   mattermost_logs:
     name: mattermost_logs
     external: true
   postgres_data:
+    name: postgres_data

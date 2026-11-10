@@ -1,4 +1,5 @@
 name: Idempotent Mattermost Migration & Upgrade
+
 on:
   push:
     branches: ["migration"]
@@ -14,11 +15,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1. Проверка идемпотентности: выполнялась ли миграция ранее?
+      # 1. Проверка идемпотентности
       - name: Check Migration Status
         id: check_status
         run: |
-          if [ -f "/home/runner/.mattermost_migration_completed" ]; then
+          if [ -f "$HOME/.mattermost_migration_completed" ]; then
             echo "✅ Database already migrated to PostgreSQL. Skipping data transfer."
             echo "already_migrated=true" >> $GITHUB_OUTPUT
           else
@@ -26,21 +27,21 @@ jobs:
             echo "already_migrated=false" >> $GITHUB_OUTPUT
           fi
 
-      # 2. Создание резервной копии MySQL перед началом работ
+      # 2. Резервная копия MySQL
       - name: Backup Legacy MySQL
         if: steps.check_status.outputs.already_migrated == 'false'
         run: |
           echo "📦 Creating timestamped backup of MySQL..."
           BACKUP_NAME="mattermost_mysql_backup_${{ github.run_id }}.sql"
           if docker ps | grep -q "mattermost-mysql"; then
-            docker exec mattermost-mysql mysqldump -u root -p${{ secrets.DB_MYSQL_ROOT_PASSWORD }} mattermost > $BACKUP_NAME
+            docker exec mattermost-mysql mysqldump -u root -p${{ secrets.DB_MYSQL_ROOT_PASSWORD }} mattermost > "$BACKUP_NAME"
             echo "✅ Backup successfully saved as $BACKUP_NAME"
           else
             echo "❌ Error: Legacy MySQL container is not running!"
             exit 1
           fi
 
-      # 3. Поднятие временного контейнера PostgreSQL для приема данных
+      # 3. Поднятие PostgreSQL
       - name: Start Target PostgreSQL
         if: steps.check_status.outputs.already_migrated == 'false'
         run: |
@@ -48,32 +49,30 @@ jobs:
           echo "⏳ Waiting for PostgreSQL to initialize..."
           sleep 10
 
-      # 4. Гетерогенная миграция данных с помощью pgloader
+      # 4. Миграция данных через pgloader (образ dimitri/pgloader поддерживает ARM64 нативно)
       - name: Run pgloader (With Schema Drop for Idempotency)
         if: steps.check_status.outputs.already_migrated == 'false'
-        shell: powershell
         run: |
-          Write-Host "🔄 Migrating schema and data from MySQL to PostgreSQL..."
-          docker run --rm --network=mattermost_network dimitri/pgloader:latest pgloader `
-            --with "include drop" `
-            mysql://root:${{ secrets.DB_MYSQL_ROOT_PASSWORD }}@mattermost-mysql/mattermost `
+          echo "🔄 Migrating schema and data from MySQL to PostgreSQL..."
+          docker run --rm --network=mattermost_network dimitri/pgloader:latest pgloader \
+            --with "include drop" \
+            mysql://root:${{ secrets.DB_MYSQL_ROOT_PASSWORD }}@mattermost-mysql/mattermost \
             postgresql://postgres:${{ secrets.DB_POSTGRES_PASSWORD }}@mattermost-postgres/mattermost
 
-      # 5. Установка маркерного флаг-файла успешной миграции
+      # 5. Установка флаг-файла
       - name: Mark Migration as Completed
         if: steps.check_status.outputs.already_migrated == 'false'
-        run: touch /home/runner/.mattermost_migration_completed
+        run: touch "$HOME/.mattermost_migration_completed"
 
-      # 6. Развертывание обновленного продакшн-стека
+      # 6. Развертывание обновлённого стека
       - name: Deploy Upgraded Stack
         run: |
           echo "🚀 Launching Upgraded Mattermost Stack..."
-          # --remove-orphans автоматически остановит и удалит старый контейнер MySQL
           docker compose -f $COMPOSE_FILE up -d --build --remove-orphans
           echo "⏳ Waiting for Mattermost to apply internal database updates..."
           sleep 30
 
-      # 7. Автоматическое тестирование работоспособности и сохранности данных
+      # 7. Проверка работоспособности
       - name: Run Health Checks & Verify Data
         run: |
           echo "🧪 Running Smoke Tests..."

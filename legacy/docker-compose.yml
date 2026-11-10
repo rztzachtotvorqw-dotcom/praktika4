@@ -1,5 +1,5 @@
 # legacy/docker-compose.yml
-# Старый (legacy) стек: Mattermost v9.5 + MySQL 8.0
+# Legacy стек: Mattermost v9.5 + MySQL 8.0
 services:
   mattermost:
     image: mattermost/mattermost-team-edition:9.5
@@ -7,7 +7,7 @@ services:
     ports:
       - "8065:8065"
     environment:
-      - MM_SQLSETTINGS_DRIVERNAME=mysql # Исправлено с ошибочного squirrel из PDF
+      - MM_SQLSETTINGS_DRIVERNAME=mysql
       - MM_SQLSETTINGS_DATASOURCE=root:${DB_MYSQL_ROOT_PASSWORD}@tcp(mattermost-mysql:3306)/mattermost?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s
       - MM_SQLSETTINGS_DATASOURCESSLMODE=disabled
       - MM_SERVICESETTINGS_SITEURL=http://localhost:8065
@@ -39,12 +39,13 @@ services:
 
 networks:
   mattermost_network:
-    name: mattermost_network # Фиксированное имя для переиспользования
+    name: mattermost_network
     driver: bridge
 
 volumes:
   mattermost_data:
-    name: mattermost_data # Фиксированное имя тома
+    name: mattermost_data
   mattermost_logs:
     name: mattermost_logs
   mysql_data:
+    name: mysql_data
