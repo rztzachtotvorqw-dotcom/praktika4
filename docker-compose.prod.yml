@@ -1,8 +1,9 @@
 # docker-compose.prod.yml
-# Production стек: Mattermost v12.0.1 + PostgreSQL 15
+# Production стек: Mattermost v12.0.1 + PostgreSQL 15 (с поддержкой ARM64 через Rosetta)
 services:
   mattermost:
     image: mattermost/mattermost-team-edition:12.0.1
+    platform: linux/amd64
     container_name: mattermost
     ports:
       - "8065:8065"
@@ -22,6 +23,7 @@ services:
 
   mattermost-postgres:
     image: postgres:15-alpine
+    platform: linux/amd64
     container_name: mattermost-postgres
     environment:
       - POSTGRES_USER=postgres
