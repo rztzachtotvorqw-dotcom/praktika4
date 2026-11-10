@@ -1,3 +1,4 @@
 .env
 *.sql
 backup_*.sql
+actions-runner/
