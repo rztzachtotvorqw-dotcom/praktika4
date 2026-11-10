@@ -21,6 +21,7 @@ jobs:
           echo "DB_MYSQL_ROOT_PASSWORD=${{ secrets.DB_MYSQL_ROOT_PASSWORD }}" > .env
           echo "DB_MMUSER_PASSWORD=${{ secrets.DB_MMUSER_PASSWORD }}" >> .env
           echo "DB_POSTGRES_PASSWORD=${{ secrets.DB_POSTGRES_PASSWORD }}" >> .env
+          cat .env
 
       # 1. Проверка идемпотентности
       - name: Check Migration Status
@@ -71,33 +72,4 @@ jobs:
         if: steps.check_status.outputs.already_migrated == 'false'
         run: touch "$HOME/.mattermost_migration_completed"
 
-      # 5.5. Остановка legacy-стека
-      - name: Stop Legacy Stack
-        run: |
-          echo "🛑 Stopping legacy Mattermost stack..."
-          if [ -f "legacy/docker-compose.yml" ]; then
-            docker compose -f legacy/docker-compose.yml down
-            echo "✅ Legacy stack stopped."
-          else
-            echo "⚠ Legacy compose file not found, skipping."
-          fi
-
-      # 6. Развертывание обновлённого стека
-      - name: Deploy Upgraded Stack
-        run: |
-          echo "🚀 Launching Upgraded Mattermost Stack..."
-          docker compose -f $COMPOSE_FILE up -d --build --remove-orphans
-          echo "⏳ Waiting for Mattermost to apply internal database updates..."
-          sleep 30
-
-      # 7. Проверка работоспособности
-      - name: Run Health Checks & Verify Data
-        run: |
-          echo "🧪 Running Smoke Tests..."
-          if curl -f http://localhost:8065/api/v4/system/ping; then
-            echo "✅ Mattermost upgraded successfully and running on Postgres!"
-          else
-            echo "❌ Application health check failed. Fetching logs..."
-            docker compose -f $COMPOSE_FILE logs
-            exit 1
-          fi
+      # 5.5.
