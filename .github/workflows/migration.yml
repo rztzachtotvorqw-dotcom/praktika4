@@ -51,11 +51,12 @@ jobs:
       # 4. Гетерогенная миграция данных с помощью pgloader
       - name: Run pgloader (With Schema Drop for Idempotency)
         if: steps.check_status.outputs.already_migrated == 'false'
+        shell: powershell
         run: |
-          echo "🔄 Migrating schema and data from MySQL to PostgreSQL..."
-          docker run --rm --platform linux/amd64 --network=mattermost_network mattermost/mattermost-pgloader:latest pgloader \
-            --with "include drop" \
-            mysql://root:${{ secrets.DB_MYSQL_ROOT_PASSWORD }}@mattermost-mysql/mattermost \
+          Write-Host "🔄 Migrating schema and data from MySQL to PostgreSQL..."
+          docker run --rm --platform linux/amd64 --network=mattermost_network mattermost/mattermost-pgloader:latest pgloader `
+            --with "include drop" `
+            mysql://root:${{ secrets.DB_MYSQL_ROOT_PASSWORD }}@mattermost-mysql/mattermost `
             postgresql://postgres:${{ secrets.DB_POSTGRES_PASSWORD }}@mattermost-postgres/mattermost
 
       # 5. Установка маркерного флаг-файла успешной миграции
